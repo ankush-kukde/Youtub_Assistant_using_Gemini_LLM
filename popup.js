@@ -6,10 +6,13 @@ class YouTubeChatbot {
         this.isLoading = false;
         this.apiEndpoint = ''; // TODO: Set your API endpoint here
 
-        this.initializeElements();
-        this.setupEventListeners();
-        this.loadCurrentVideo();
-        this.loadChatHistory();
+        // Initialize with a small delay to ensure DOM is ready
+        setTimeout(() => {
+            this.initializeElements();
+            this.setupEventListeners();
+            this.loadCurrentVideo();
+            this.loadChatHistory();
+        }, 100);
     }
 
     initializeElements() {
@@ -49,9 +52,16 @@ class YouTubeChatbot {
 
         // Listen for video changes
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            if (message.type === 'VIDEO_CHANGED') {
-                this.updateVideoInfo(message.videoInfo);
+            try {
+                if (message.type === 'VIDEO_CHANGED') {
+                    this.updateVideoInfo(message.videoInfo);
+                    sendResponse({ received: true });
+                }
+            } catch (error) {
+                console.error('Error handling runtime message:', error);
+                sendResponse({ error: error.message });
             }
+            return true; // Keep the message channel open
         });
     }
 
@@ -79,8 +89,15 @@ class YouTubeChatbot {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             
             if (tab && tab.url && tab.url.includes('youtube.com/watch')) {
-                // Send message to content script
+                // Send message to content script with error handling
                 chrome.tabs.sendMessage(tab.id, { type: 'GET_CURRENT_VIDEO' }, (response) => {
+                    // Check for chrome.runtime.lastError
+                    if (chrome.runtime.lastError) {
+                        console.log('Content script not ready, trying to inject...');
+                        this.injectAndRetry(tab.id);
+                        return;
+                    }
+                    
                     if (response && response.videoId) {
                         this.updateVideoInfo(response);
                     } else {
@@ -96,6 +113,36 @@ class YouTubeChatbot {
         }
     }
 
+    async injectAndRetry(tabId) {
+        try {
+            // Inject content script manually
+            await chrome.scripting.executeScript({
+                target: { tabId: tabId },
+                files: ['content.js']
+            });
+            
+            // Wait a bit for the script to initialize
+            setTimeout(() => {
+                chrome.tabs.sendMessage(tabId, { type: 'GET_CURRENT_VIDEO' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.log('Still unable to connect to content script');
+                        this.showNoVideoMessage();
+                        return;
+                    }
+                    
+                    if (response && response.videoId) {
+                        this.updateVideoInfo(response);
+                    } else {
+                        this.showNoVideoMessage();
+                    }
+                });
+            }, 1000);
+        } catch (error) {
+            console.error('Error injecting content script:', error);
+            this.showNoVideoMessage();
+        }
+    }
+
     updateVideoInfo(videoInfo) {
         if (videoInfo && videoInfo.videoId) {
             this.currentVideo = videoInfo;
@@ -106,6 +153,9 @@ class YouTubeChatbot {
             
             // Update placeholder
             this.messageInput.placeholder = `Ask about "${videoInfo.title}"...`;
+            
+            // Enable input
+            this.messageInput.disabled = false;
         } else {
             this.showNoVideoMessage();
         }
@@ -117,6 +167,34 @@ class YouTubeChatbot {
         this.messageInput.placeholder = 'Please open a YouTube video first...';
         this.messageInput.disabled = true;
         this.sendBtn.disabled = true;
+        
+        // Try to extract video info from current URL as fallback
+        this.tryExtractFromUrl();
+    }
+
+    async tryExtractFromUrl() {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab && tab.url && tab.url.includes('youtube.com/watch')) {
+                const url = new URL(tab.url);
+                const videoId = url.searchParams.get('v');
+                
+                if (videoId) {
+                    const fallbackInfo = {
+                        videoId: videoId,
+                        url: tab.url,
+                        title: tab.title || 'YouTube Video',
+                        channel: 'Unknown Channel',
+                        description: ''
+                    };
+                    
+                    this.updateVideoInfo(fallbackInfo);
+                    this.connectionStatus.textContent = 'Connected (fallback mode)';
+                }
+            }
+        } catch (error) {
+            console.log('Fallback URL extraction failed:', error);
+        }
     }
 
     async sendMessage() {

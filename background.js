@@ -81,9 +81,16 @@ class BackgroundService {
             chrome.runtime.sendMessage({
                 type: 'VIDEO_CHANGED',
                 videoInfo: videoInfo
+            }, (response) => {
+                // Handle potential error
+                if (chrome.runtime.lastError) {
+                    // Popup might not be open, that's okay
+                    console.log('Popup not available for video update notification');
+                }
             });
         } catch (error) {
             // Popup might not be open, that's okay
+            console.log('Error sending video update to popup:', error.message);
         }
 
         // Update badge to show video is detected
