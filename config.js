@@ -70,7 +70,7 @@ const CONFIG = {
     // UI Configuration
     UI: {
         // Extension popup dimensions
-        POPUP_WIDTH: 380,
+        POPUP_WIDTH: 480,
         POPUP_HEIGHT: 600,
         
         // Animation durations (in milliseconds)
