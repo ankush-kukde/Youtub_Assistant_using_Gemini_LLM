@@ -1,0 +1,12 @@
+youtube-transcript-api
+langchain-community
+langchain-google-genai
+faiss-cpu
+fastapi
+uvicorn
+python-multipart
+sentence-transformers
+transformers
+torch
+google-generativeai
+pydantic

@@ -1,59 +1,61 @@
-# YouTube AI Chatbot Chrome Extension
+# YouTube RAG API
 
-A powerful Chrome extension that adds an AI chatbot to your YouTube experience. Chat with an AI assistant about any video you're watching!
+A FastAPI-based service that uses Retrieval-Augmented Generation (RAG) to answer questions about YouTube videos using their transcripts.
 
-## 🚀 Features
+## Features
 
-- **Smart Video Detection**: Automatically detects when you're watching a YouTube video
-- **Beautiful Chat Interface**: Modern, responsive chatbot UI with smooth animations
-- **Video Context Awareness**: The AI knows which video you're watching
-- **Chat History**: Saves conversation history per video (24-hour retention)
-- **Real-time Updates**: Updates when you switch between videos
-- **API Ready**: Easy integration with your AI model API
-- **Privacy Focused**: All data stays local except for API calls to your configured endpoint
+- 🎥 **YouTube Transcript Processing**: Automatically fetches and processes YouTube video transcripts
+- 🔍 **Semantic Search**: Uses FAISS vector store with sentence transformers for semantic similarity search
+- 🤖 **AI-Powered Responses**: Leverages Google Gemini for generating contextual answers
+- 💬 **Conversation History**: Maintains conversation context for better responses
+- ⚡ **Fast API**: Built with FastAPI for high performance and automatic API documentation
+- 📊 **Confidence Scoring**: Returns confidence scores with each response
 
-## 📦 Installation
+## Installation
 
-### Method 1: Load as Unpacked Extension (Recommended for Development)
+1. **Clone the repository and navigate to the project directory**
 
-1. **Download/Clone** this repository to your local machine
-2. **Open Chrome** and navigate to `chrome://extensions/`
-3. **Enable Developer Mode** by clicking the toggle in the top-right corner
-4. **Click "Load unpacked"** and select the extension folder
-5. **Pin the extension** by clicking the puzzle piece icon and pinning "YouTube AI Chatbot"
+2. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### Method 2: Package and Install
+3. **Set up environment variables**:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and add your Google Gemini API key:
+   ```
+   GOOGLE_API_KEY=your_actual_api_key_here
+   ```
+   
+   Get your API key from: https://makersuite.google.com/app/apikey
 
-1. Navigate to `chrome://extensions/`
-2. Enable Developer Mode
-3. Click "Pack extension" and select the extension folder
-4. Install the generated `.crx` file
+## Usage
 
-## ⚙️ Configuration
+### Starting the Server
 
-### Setting up Your AI API
-
-The extension is designed to work with your own AI model API. To configure it:
-
-1. **Open the extension popup** on any YouTube video page
-2. **Locate the API configuration** in the `popup.js` file
-3. **Update the API endpoint**:
-
-```javascript
-// In popup.js, around line 10:
-this.apiEndpoint = 'https://your-api-endpoint.com/chat';
-
-// Or set it dynamically:
-window.chatbot.setApiEndpoint('https://your-api-endpoint.com/chat');
+```bash
+python main.py
 ```
 
-### API Endpoint Requirements
+The API will be available at `http://localhost:8000`
 
-Your API should accept POST requests with this format:
+### API Documentation
 
+Visit `http://localhost:8000/docs` for interactive API documentation (Swagger UI)
+
+### API Endpoints
+
+#### POST `/ask`
+
+Ask a question about a YouTube video.
+
+**Request Body:**
 ```json
 {
-  "message": "User's question about the video",
+  "message": "What is this video about?",
   "video": {
     "videoId": "dQw4w9WgXcQ",
     "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -69,11 +71,10 @@ Your API should accept POST requests with this format:
 }
 ```
 
-And return responses in this format:
-
+**Response:**
 ```json
 {
-  "response": "AI's response to the user",
+  "response": "This video is about...",
   "metadata": {
     "confidence": 0.95,
     "processing_time": 1.2
@@ -81,153 +82,117 @@ And return responses in this format:
 }
 ```
 
-## 🎯 Usage
+#### GET `/health`
 
-1. **Open a YouTube video** in any tab
-2. **Click the extension icon** to open the chatbot
-3. **Start chatting!** Ask questions about the video content
-4. **Switch videos** and the chatbot will automatically update context
+Health check endpoint.
 
-### Example Conversations
+#### GET `/`
 
-- "What is this video about?"
-- "Can you summarize the main points?"
-- "What did they say about [specific topic]?"
-- "Explain this concept in simpler terms"
-- "What are the key takeaways?"
+Root endpoint with API information.
 
-## 🛠️ Development
+## Testing
 
-### Project Structure
+Run the test script to verify the API functionality:
 
-```
-youtube-ai-chatbot/
-├── manifest.json          # Extension configuration
-├── content.js            # YouTube page content script
-├── background.js         # Service worker for API handling
-├── popup.html           # Chat interface HTML
-├── popup.css            # Modern UI styling
-├── popup.js             # Chat functionality
-├── icons/               # Extension icons
-└── README.md           # This file
+```bash
+python test_api.py
 ```
 
-### Key Components
+## Example Usage
 
-- **Content Script**: Detects YouTube videos and extracts metadata
-- **Background Script**: Handles API communication and state management
-- **Popup Interface**: Modern chat UI with animations and responsive design
-- **Storage System**: Saves chat history and video context locally
+### Using curl
 
-### Customization
-
-#### Changing the UI Theme
-
-Edit `popup.css` to customize colors, fonts, and animations:
-
-```css
-/* Update the main gradient */
-.header {
-    background: linear-gradient(135deg, #your-color1 0%, #your-color2 100%);
-}
+```bash
+curl -X POST "http://localhost:8000/ask" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "message": "What is this video about?",
+       "video": {
+         "videoId": "5NgNicANyqM",
+         "url": "https://www.youtube.com/watch?v=5NgNicANyqM",
+         "title": "Sample Video",
+         "description": "A sample video",
+         "channel": "Sample Channel",
+         "timestamp": 1645123456789
+       }
+     }'
 ```
 
-#### Adding New Features
+### Using Python requests
 
-The extension is built with modularity in mind. Key extension points:
+```python
+import requests
 
-- **Message Processing**: Add custom handlers in `popup.js`
-- **Video Detection**: Enhance selectors in `content.js`
-- **API Integration**: Modify request/response handling in `background.js`
+response = requests.post("http://localhost:8000/ask", json={
+    "message": "What is this video about?",
+    "video": {
+        "videoId": "5NgNicANyqM",
+        "url": "https://www.youtube.com/watch?v=5NgNicANyqM",
+        "title": "Sample Video",
+        "description": "A sample video",
+        "channel": "Sample Channel",
+        "timestamp": 1645123456789
+    }
+})
 
-## 🔒 Privacy & Security
-
-- **Local Storage**: Chat history is stored locally in Chrome's storage
-- **No Tracking**: The extension doesn't track or collect personal data
-- **API Communication**: Only configured API endpoint receives data
-- **Permissions**: Minimal permissions for YouTube pages only
-
-## 🐛 Troubleshooting
-
-### Extension Not Detecting Videos
-
-1. **Refresh the YouTube page** after installing
-2. **Check if the video URL contains `/watch`**
-3. **Look for console errors** in Developer Tools
-
-### Chat Not Working
-
-1. **Verify API endpoint** is configured correctly
-2. **Check network tab** for failed API requests
-3. **Ensure CORS is enabled** on your API server
-
-### UI Issues
-
-1. **Try refreshing** the extension popup
-2. **Check browser console** for JavaScript errors
-3. **Verify all files** are loaded correctly
-
-## 🔧 Advanced Configuration
-
-### Custom API Headers
-
-Modify the API request in `background.js`:
-
-```javascript
-const response = await fetch(this.apiEndpoint, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer your-api-key',
-        'Custom-Header': 'value'
-    },
-    body: JSON.stringify(requestData)
-});
+print(response.json())
 ```
 
-### Video Data Enhancement
+## How It Works
 
-Add more video metadata in `content.js`:
+1. **Transcript Fetching**: The service uses `youtube-transcript-api` to fetch video transcripts
+2. **Text Chunking**: Transcripts are split into chunks using LangChain's `RecursiveCharacterTextSplitter`
+3. **Vector Embeddings**: Text chunks are converted to embeddings using sentence transformers
+4. **Vector Storage**: Embeddings are stored in FAISS for fast similarity search
+5. **Retrieval**: Relevant chunks are retrieved based on question similarity
+6. **Generation**: Google Gemini generates contextual answers using retrieved chunks
+7. **Response**: Final answer with confidence score and metadata is returned
 
-```javascript
-// Get video duration, view count, etc.
-function getVideoMetadata() {
-    return {
-        duration: document.querySelector('.ytp-time-duration')?.textContent,
-        views: document.querySelector('#info-text')?.textContent,
-        likes: document.querySelector('like-button')?.textContent
-    };
-}
-```
+## Configuration
 
-## 📈 Performance
+### Environment Variables
 
-- **Lightweight**: Minimal resource usage
-- **Efficient**: Smart caching and debounced API calls
-- **Responsive**: Optimized for smooth animations
-- **Scalable**: Designed to handle multiple video sessions
+- `GOOGLE_API_KEY`: Your Google Gemini API key (required)
 
-## 🤝 Contributing
+### Model Configuration
+
+The service uses:
+- **Embedding Model**: `sentence-transformers/all-MiniLM-L6-v2`
+- **LLM**: Google Gemini 1.5 Flash
+- **Text Splitter**: Recursive character splitter (1000 chars, 200 overlap)
+- **Vector Store**: FAISS
+
+## Error Handling
+
+The API includes comprehensive error handling for:
+- Invalid video IDs
+- Missing transcripts
+- API failures
+- Network issues
+- Invalid request formats
+
+## Performance Considerations
+
+- Vector stores are cached per video ID to avoid reprocessing
+- Conversation history is limited to last 5 messages
+- Responses include processing time metrics
+- FAISS provides fast vector similarity search
+
+## Limitations
+
+- Requires videos to have available transcripts
+- Currently supports English transcripts
+- API key required for Google Gemini
+- Memory-based vector store (not persistent)
+
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Add tests
 5. Submit a pull request
 
-## 📄 License
+## License
 
-This project is open source. Feel free to use, modify, and distribute according to your needs.
-
-## 🆘 Support
-
-If you encounter issues or have questions:
-
-1. Check the troubleshooting section above
-2. Review the browser console for errors
-3. Ensure your API endpoint is properly configured
-4. Test with a simple API endpoint first
-
----
-
-**Made with ❤️ for the YouTube and AI community**
+MIT License
