@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=480, initial-scale=1.0">
+    <meta name="viewport" content="width=480, height=600, initial-scale=1.0">
     <title>YouTube AI Chatbot</title>
     <link rel="stylesheet" href="popup.css">
     <style>
@@ -10,9 +10,12 @@
             width: 480px !important;
             min-width: 480px !important;
             max-width: 480px !important;
+            height: 600px !important;
+            min-height: 600px !important;
+            max-height: 600px !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow-x: hidden !important;
+            overflow: hidden !important;
         }
         
         /* Additional fix for popup clipping */
@@ -20,11 +23,15 @@
             position: relative !important;
             left: 0 !important;
             right: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
         }
         
         .container {
             position: relative !important;
             transform: none !important;
+            width: 480px !important;
+            height: 600px !important;
         }
     </style>
 </head>
