@@ -71,11 +71,14 @@ async def ask_question(request: QueryRequest):
         logger.info(f"Processing question for video {request.video.videoId}: {request.message[:50]}...")
         start_time = time.time()
         
+        # Convert conversation history to dictionaries
+        conversation_history = [msg.dict() for msg in request.conversationHistory] if request.conversationHistory else []
+        
         # Get response from RAG service
         response_text, confidence = await rag_service.answer_question(
             video_id=request.video.videoId,
             question=request.message,
-            conversation_history=request.conversationHistory
+            conversation_history=conversation_history
         )
         
         processing_time = time.time() - start_time
