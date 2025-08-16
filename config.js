@@ -25,7 +25,10 @@ const CONFIG = {
             'User-Agent': 'YouTube-AI-Chatbot-Extension/1.0'
         },
         
-        // Google API Key for Gemini (leave blank, user will configure)
+        // Google API Key for Gemini 
+        // NOTE: This is for frontend use only. For the backend RAG service,
+        // configure your API key in the .env file instead.
+        // Get your API key from: https://makersuite.google.com/app/apikey
         GOOGLE_API_KEY: ''
     },
 

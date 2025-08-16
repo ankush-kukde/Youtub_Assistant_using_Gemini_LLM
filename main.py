@@ -5,7 +5,11 @@ from typing import List, Optional, Dict, Any
 import time
 import os
 import logging
+from dotenv import load_dotenv
 from rag_service import RAGService
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

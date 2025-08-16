@@ -20,17 +20,32 @@ A FastAPI-based service that uses Retrieval-Augmented Generation (RAG) to answer
    pip install -r requirements.txt
    ```
 
-3. **Set up environment variables**:
+3. **Set up your Google Gemini API key**:
+   
+   **Option 1: Using .env file (Recommended)**
    ```bash
-   cp .env.example .env
+   # Edit the .env file and replace the placeholder with your actual API key
+   nano .env
    ```
    
-   Edit `.env` and add your Google Gemini API key:
+   Replace `your_google_api_key_here` with your actual API key:
    ```
-   GOOGLE_API_KEY=your_actual_api_key_here
+   GOOGLE_API_KEY=AIzaSyYourActualAPIKeyHere
    ```
    
-   Get your API key from: https://makersuite.google.com/app/apikey
+   **Option 2: Environment variable**
+   ```bash
+   export GOOGLE_API_KEY=AIzaSyYourActualAPIKeyHere
+   ```
+   
+   **Get your API key from**: https://makersuite.google.com/app/apikey
+
+4. **Test your API key configuration**:
+   ```bash
+   python3 test_api_key.py
+   ```
+   
+   You should see: `🎉 Configuration test PASSED!`
 
 ## Usage
 

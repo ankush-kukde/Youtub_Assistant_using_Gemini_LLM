@@ -1,6 +1,7 @@
 import os
 import time
 from typing import List, Tuple, Optional
+from dotenv import load_dotenv
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import TranscriptsDisabled
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -9,6 +10,9 @@ from langchain_core.prompts import PromptTemplate
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 import google.generativeai as genai
+
+# Load environment variables from .env file
+load_dotenv()
 
 class RAGService:
     def __init__(self):
@@ -52,16 +56,24 @@ class RAGService:
         """Setup Google Gemini API"""
         # Try to get API key from environment
         api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            # For demo purposes, we'll use a placeholder
-            # In production, this should be properly configured
-            print("Warning: GOOGLE_API_KEY not found in environment variables")
-            print("Please set your Google API key for Gemini to work properly")
+        if not api_key or api_key == "your_google_api_key_here":
+            print("❌ GOOGLE_API_KEY not found or not configured!")
+            print("📝 To fix this:")
+            print("   1. Get your API key from: https://makersuite.google.com/app/apikey")
+            print("   2. Edit the .env file and replace 'your_google_api_key_here' with your actual API key")
+            print("   3. Or set the environment variable: export GOOGLE_API_KEY=your_actual_key")
+            print("   4. Restart the server")
             self.model = None
             return
             
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        try:
+            genai.configure(api_key=api_key)
+            self.model = genai.GenerativeModel("gemini-1.5-flash")
+            print("✅ Google Gemini API configured successfully!")
+        except Exception as e:
+            print(f"❌ Error configuring Google Gemini API: {str(e)}")
+            print("Please check your API key and try again.")
+            self.model = None
     
     def _generate_response(self, prompt: str, temperature: float = 0.2, max_tokens: int = 256) -> str:
         """Generate response using Google Gemini"""
