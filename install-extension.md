@@ -13,6 +13,17 @@ Make sure you have all these files in your folder:
 - ✅ `config.js`
 - ✅ `icons/` folder
 
+**⚠️ Important:** If you see Python files (`.py`, `__pycache__/`) in the folder, these are NOT needed for the Chrome extension and may cause packaging issues. You can:
+- Use the provided `package-extension.sh` script to create a clean package
+- Or manually exclude these files when loading the extension
+
+### Step 1.5: Optional - Use Packaging Script
+If you have Python files in the directory, run this command to create a clean extension package:
+```bash
+./package-extension.sh
+```
+This will create a `youtube-ai-chatbot-extension.zip` with only the necessary extension files.
+
 ### Step 2: Open Chrome Extensions
 1. **Open Google Chrome**
 2. **Copy and paste this in address bar:** `chrome://extensions/`

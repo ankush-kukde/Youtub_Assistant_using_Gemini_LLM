@@ -115,20 +115,32 @@ class RAGService:
         
         return self.vector_stores[video_id]
     
-    def _format_conversation_history(self, conversation_history: List[dict]) -> str:
+    def _format_conversation_history(self, conversation_history: List) -> str:
         """Format conversation history for context"""
         if not conversation_history:
             return "No previous conversation."
             
         formatted_history = []
         for msg in conversation_history[-5:]:  # Only use last 5 messages
-            sender = msg.get('sender', 'unknown')
-            text = msg.get('text', '')
+            # Handle both Pydantic models and dictionaries
+            if hasattr(msg, 'sender') and hasattr(msg, 'text'):
+                # Pydantic model
+                sender = msg.sender
+                text = msg.text
+            elif isinstance(msg, dict):
+                # Dictionary
+                sender = msg.get('sender', 'unknown')
+                text = msg.get('text', '')
+            else:
+                # Fallback for unexpected types
+                sender = 'unknown'
+                text = str(msg)
+            
             formatted_history.append(f"{sender}: {text}")
         
         return "\n".join(formatted_history)
     
-    async def answer_question(self, video_id: str, question: str, conversation_history: List[dict] = None) -> Tuple[str, float]:
+    async def answer_question(self, video_id: str, question: str, conversation_history: List = None) -> Tuple[str, float]:
         """
         Answer a question about a YouTube video
         
