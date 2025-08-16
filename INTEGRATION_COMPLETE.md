@@ -137,6 +137,3 @@ You'll know everything is working when:
 **🎉 Congratulations! Your YouTube AI Chatbot with RAG integration is ready to use!** 
 
 The extension will automatically connect to your local RAG API and provide intelligent responses about YouTube video content using Google Gemini AI. Just remember to set your `GOOGLE_API_KEY` environment variable when you're ready to test with real API responses.
-
-
-
