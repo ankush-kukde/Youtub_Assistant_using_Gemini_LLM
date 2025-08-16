@@ -1,0 +1,23 @@
+{
+  "message": "What is this video about?",
+  "video": {
+    "videoId": "dQw4w9WgXcQ",
+    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "title": "Rick Astley - Never Gonna Give You Up",
+    "description": "Official Video for Never Gonna Give You Up",
+    "channel": "Rick Astley",
+    "timestamp": 1645123456789
+  },
+  "conversationHistory": [
+    {
+      "text": "Hello! Can you help me understand this video?",
+      "sender": "user",
+      "timestamp": 1645123456789
+    },
+    {
+      "text": "Of course! I can help you analyze the video content based on its transcript.",
+      "sender": "bot",
+      "timestamp": 1645123456790
+    }
+  ]
+}
