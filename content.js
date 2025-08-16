@@ -86,13 +86,26 @@
 
     // Listen for messages from popup
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.type === 'GET_CURRENT_VIDEO') {
+        try {
+            if (request.type === 'GET_CURRENT_VIDEO') {
+                const response = {
+                    videoId: currentVideoId,
+                    url: currentVideoUrl,
+                    title: currentVideoTitle || getVideoTitle(),
+                    channel: getChannelName(),
+                    description: getVideoDescription()
+                };
+                sendResponse(response);
+                return true; // Keep the message channel open
+            }
+        } catch (error) {
+            console.error('Error in content script message handler:', error);
             sendResponse({
-                videoId: currentVideoId,
-                url: currentVideoUrl,
-                title: currentVideoTitle
+                error: error.message,
+                videoId: null
             });
         }
+        return true; // Keep the message channel open for async responses
     });
 
 })();
