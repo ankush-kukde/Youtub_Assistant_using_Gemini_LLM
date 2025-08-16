@@ -5,20 +5,34 @@
     box-sizing: border-box;
 }
 
+html {
+    width: 480px !important;
+    min-width: 480px !important;
+    max-width: 480px !important;
+    overflow-x: hidden;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     overflow: hidden;
+    margin: 0;
+    padding: 0;
+    min-width: 480px;
+    width: 480px;
 }
 
 .container {
     width: 480px;
+    min-width: 480px;
     height: 600px;
     background: #ffffff;
     display: flex;
     flex-direction: column;
     position: relative;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    margin: 0;
+    padding: 0;
 }
 
 /* Header Styles */
@@ -234,6 +248,8 @@ body {
     padding: 4px;
     border: 2px solid transparent;
     transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .input-container:focus-within {

@@ -1,0 +1,46 @@
+/* Debug CSS for Extension Popup Clipping Issues */
+
+/* Force specific dimensions */
+html, body {
+    width: 480px !important;
+    min-width: 480px !important;
+    max-width: 480px !important;
+    height: 600px !important;
+    min-height: 600px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+/* Container debug */
+.container {
+    width: 480px !important;
+    min-width: 480px !important;
+    max-width: 480px !important;
+    height: 600px !important;
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Debug border to see actual boundaries */
+.debug-mode .container {
+    border: 2px solid red !important;
+}
+
+.debug-mode .header {
+    border: 1px solid blue !important;
+}
+
+.debug-mode .chat-container {
+    border: 1px solid green !important;
+}
+
+.debug-mode .input-section {
+    border: 1px solid orange !important;
+}
