@@ -230,42 +230,81 @@ class YouTubeChatbot {
     }
 
     async getAIResponse(userMessage) {
-        // If no API endpoint is set, return a mock response
-        if (!this.apiEndpoint) {
+        try {
+            // First check if RAG API is available
+            const healthCheck = await this.checkAPIHealth();
+            if (!healthCheck.success) {
+                return `RAG API is not available: ${healthCheck.error}\n\nPlease make sure the RAG API server is running by executing:\npython3 main.py\n\nThen refresh this extension.`;
+            }
+
+            // Format conversation history for RAG API
+            const conversationHistory = this.messages.slice(-10).map(msg => ({
+                text: msg.text,
+                sender: msg.sender,
+                timestamp: msg.timestamp || Date.now()
+            }));
+
+            // Prepare data for background script
+            const requestData = {
+                message: userMessage,
+                conversationHistory: conversationHistory
+            };
+
+            // Send request through background script
+            const response = await chrome.runtime.sendMessage({
+                type: 'CHAT_REQUEST',
+                data: requestData
+            });
+
+            if (response.success) {
+                let botResponse = response.response;
+                
+                // Add metadata information if available
+                if (response.metadata) {
+                    const confidence = response.confidence || response.metadata.confidence;
+                    const processingTime = response.processingTime || response.metadata.processing_time;
+                    
+                    if (confidence !== undefined && confidence < 0.7) {
+                        botResponse += `\n\n*Note: This response has moderate confidence (${Math.round(confidence * 100)}%). The video transcript might not contain detailed information about your question.*`;
+                    }
+                }
+                
+                return botResponse;
+            } else {
+                throw new Error(response.error || 'Unknown error occurred');
+            }
+        } catch (error) {
+            console.error('Error getting AI response:', error);
+            
+            // Check if it's a connection error
+            if (error.message.includes('Extension context invalidated')) {
+                return 'The extension needs to be reloaded. Please refresh the page and try again.';
+            }
+            
             return this.getMockResponse(userMessage);
         }
+    }
 
-        // Prepare context
-        const context = {
-            message: userMessage,
-            video: this.currentVideo,
-            conversationHistory: this.messages.slice(-10) // Last 10 messages for context
-        };
-
-        // Make API call
-        const response = await fetch(this.apiEndpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(context)
-        });
-
-        if (!response.ok) {
-            throw new Error(`API request failed: ${response.status}`);
+    async checkAPIHealth() {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                type: 'CHECK_API_HEALTH'
+            });
+            return response;
+        } catch (error) {
+            return {
+                success: false,
+                error: 'Could not check API health. Extension might need to be reloaded.'
+            };
         }
-
-        const data = await response.json();
-        return data.response || data.message || 'Sorry, I couldn\'t generate a response.';
     }
 
     getMockResponse(userMessage) {
         const responses = [
-            "I'd be happy to help you with that! However, I need to be connected to an AI service to provide detailed responses about this video.",
-            "That's an interesting question about this video. Once the API endpoint is configured, I'll be able to analyze the video content and provide detailed answers.",
-            "I can see you're asking about the video, but I'm currently running in demo mode. Please configure the API endpoint to get AI-powered responses.",
-            "Great question! To provide accurate information about this specific video, I need access to an AI service. The API endpoint is currently not configured.",
-            "I understand you want to know more about this video. Once connected to an AI service, I'll be able to discuss the content, context, and answer your questions in detail."
+            "I'd be happy to help you analyze this video! However, the RAG API server is currently not running.\n\nTo get AI-powered responses:\n1. Open a terminal in the extension folder\n2. Run: python3 main.py\n3. Refresh this extension\n\nThe API will then analyze YouTube transcripts and answer your questions using Google Gemini AI.",
+            "That's an interesting question about this video! To get detailed analysis based on the video's transcript, please start the RAG API server:\n\n1. Navigate to the extension directory\n2. Run: python3 main.py\n3. Make sure you have set your GOOGLE_API_KEY\n4. Refresh the extension\n\nThen I'll be able to provide detailed answers about the video content.",
+            "I can see you're asking about the video content. The extension is ready to use RAG (Retrieval-Augmented Generation) to analyze YouTube transcripts, but the API server needs to be started first.\n\nPlease run 'python3 main.py' in the extension folder and refresh this page.",
+            "Great question! This extension uses a local RAG API to analyze YouTube video transcripts with Google Gemini AI. To enable this functionality:\n\n• Start the API server: python3 main.py\n• Set your GOOGLE_API_KEY environment variable\n• Refresh this extension\n\nThen I'll provide intelligent responses based on the video's actual content!"
         ];
 
         // Add some delay to simulate API call

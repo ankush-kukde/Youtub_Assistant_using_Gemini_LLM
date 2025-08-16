@@ -2,8 +2,10 @@
 class BackgroundService {
     constructor() {
         this.currentVideo = null;
-        this.apiEndpoint = ''; // Set your API endpoint here
+        this.apiEndpoint = 'http://localhost:8000/ask'; // RAG API endpoint
+        this.healthEndpoint = 'http://localhost:8000/health';
         this.setupEventListeners();
+        this.loadConfiguration();
     }
 
     setupEventListeners() {
@@ -53,6 +55,11 @@ class BackgroundService {
                 case 'CHAT_REQUEST':
                     const response = await this.handleChatRequest(message.data);
                     sendResponse(response);
+                    break;
+
+                case 'CHECK_API_HEALTH':
+                    const healthStatus = await this.checkApiHealth();
+                    sendResponse(healthStatus);
                     break;
 
                 default:
@@ -118,42 +125,72 @@ class BackgroundService {
                 };
             }
 
-            // Prepare the request
+            if (!this.currentVideo || !this.currentVideo.videoId) {
+                return {
+                    success: false,
+                    error: 'No video detected',
+                    response: 'Please navigate to a YouTube video to start chatting.'
+                };
+            }
+
+            // Prepare the request data in RAG API format
             const requestData = {
                 message: data.message,
-                video: this.currentVideo,
-                context: data.context || {},
-                timestamp: Date.now()
+                video: {
+                    videoId: this.currentVideo.videoId,
+                    url: this.currentVideo.url,
+                    title: this.currentVideo.title || '',
+                    description: this.currentVideo.description || '',
+                    channel: this.currentVideo.channel || '',
+                    timestamp: Date.now()
+                },
+                conversationHistory: data.conversationHistory || []
             };
 
-            // Make API request
+            console.log('Sending RAG API request:', requestData);
+
+            // Make API request to local RAG API
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'User-Agent': 'YouTube-AI-Chatbot/1.0'
+                    'User-Agent': 'YouTube-AI-Chatbot-Extension/1.0'
                 },
-                body: JSON.stringify(requestData)
+                body: JSON.stringify(requestData),
+                timeout: 30000
             });
 
             if (!response.ok) {
-                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                throw new Error(`RAG API request failed: ${response.status} ${response.statusText}`);
             }
 
             const result = await response.json();
+            console.log('RAG API response:', result);
             
             return {
                 success: true,
-                response: result.response || result.message || 'No response received from API',
-                metadata: result.metadata || {}
+                response: result.response || 'No response received from API',
+                metadata: result.metadata || {},
+                confidence: result.metadata?.confidence || 0.5,
+                processingTime: result.metadata?.processing_time || 0
             };
 
         } catch (error) {
             console.error('Chat request error:', error);
+            
+            // Check if it's a connection error
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                return {
+                    success: false,
+                    error: 'Connection failed',
+                    response: 'Could not connect to the RAG API server. Please make sure the API server is running on localhost:8000.'
+                };
+            }
+            
             return {
                 success: false,
                 error: error.message,
-                response: 'Sorry, I encountered an error while processing your request.'
+                response: 'Sorry, I encountered an error while processing your request. Please try again.'
             };
         }
     }
@@ -216,6 +253,47 @@ class BackgroundService {
             apiEndpoint: endpoint,
             apiConfigured: Date.now()
         });
+    }
+
+    async loadConfiguration() {
+        try {
+            const result = await chrome.storage.local.get(['apiEndpoint']);
+            if (result.apiEndpoint) {
+                this.apiEndpoint = result.apiEndpoint;
+            }
+        } catch (error) {
+            console.error('Error loading configuration:', error);
+        }
+    }
+
+    async checkApiHealth() {
+        try {
+            const response = await fetch(this.healthEndpoint, {
+                method: 'GET',
+                timeout: 5000
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return {
+                    success: true,
+                    status: 'healthy',
+                    data: result
+                };
+            } else {
+                return {
+                    success: false,
+                    status: 'unhealthy',
+                    error: `API responded with status ${response.status}`
+                };
+            }
+        } catch (error) {
+            return {
+                success: false,
+                status: 'unreachable',
+                error: 'Could not connect to the RAG API server. Please make sure it is running on localhost:8000.'
+            };
+        }
     }
 
     async loadApiEndpoint() {

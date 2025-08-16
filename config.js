@@ -6,10 +6,12 @@
 const CONFIG = {
     // API Configuration
     API: {
-        // Set your AI model API endpoint here
-        // Example: 'https://api.openai.com/v1/chat/completions'
-        // Example: 'https://your-custom-api.com/chat'
-        ENDPOINT: '',
+        // Local RAG API endpoint (YouTube AI Chatbot API)
+        // Make sure to start the API server first: python3 main.py
+        ENDPOINT: 'http://localhost:8000/ask',
+        
+        // Health check endpoint
+        HEALTH_ENDPOINT: 'http://localhost:8000/health',
         
         // API timeout in milliseconds
         TIMEOUT: 30000,
@@ -19,9 +21,12 @@ const CONFIG = {
         
         // Additional headers to send with API requests
         HEADERS: {
-            // 'Authorization': 'Bearer your-api-key',
-            // 'Custom-Header': 'value'
-        }
+            'Content-Type': 'application/json',
+            'User-Agent': 'YouTube-AI-Chatbot-Extension/1.0'
+        },
+        
+        // Google API Key for Gemini (leave blank, user will configure)
+        GOOGLE_API_KEY: ''
     },
 
     // Chat Configuration
