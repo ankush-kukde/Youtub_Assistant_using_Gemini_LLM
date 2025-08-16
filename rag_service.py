@@ -70,14 +70,23 @@ class RAGService:
             
         try:
             response = self.model.generate_content(
-                [prompt],
+                prompt,  # Pass prompt directly, not as a list
                 generation_config=genai.types.GenerationConfig(
                     temperature=temperature,
                     max_output_tokens=max_tokens,
                 )
             )
-            return response.text
+            
+            # Handle the response properly
+            if response.text:
+                return response.text
+            else:
+                return "Sorry, I couldn't generate a response. The model may have been blocked or returned empty content."
+                
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in _generate_response: {str(e)}", exc_info=True)
             return f"Sorry, I encountered an error generating the response: {str(e)}"
     
     def _get_video_transcript(self, video_id: str) -> str:
@@ -167,11 +176,12 @@ class RAGService:
             conversation_text = self._format_conversation_history(conversation_history or [])
             
             # Create final prompt
-            final_prompt = self.prompt_template.invoke({
+            final_prompt_value = self.prompt_template.invoke({
                 "context": context_text,
                 "conversation_history": conversation_text,
                 "question": question
             })
+            final_prompt = final_prompt_value.text
             
             # Generate answer
             answer = self._generate_response(final_prompt)
@@ -183,4 +193,7 @@ class RAGService:
             return answer, confidence
             
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in answer_question: {str(e)}", exc_info=True)
             return f"Sorry, I encountered an error: {str(e)}", 0.0
