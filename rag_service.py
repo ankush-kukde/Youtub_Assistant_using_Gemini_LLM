@@ -61,7 +61,7 @@ class RAGService:
             return
             
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        self.model = genai.GenerativeModel("gemini-2.0-flash-lite")
     
     def _generate_response(self, prompt: str, temperature: float = 0.2, max_tokens: int = 256) -> str:
         """Generate response using Google Gemini"""
