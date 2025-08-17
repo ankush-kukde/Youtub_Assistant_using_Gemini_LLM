@@ -53,7 +53,7 @@ class RAGService:
         )
     
     def _setup_gemini(self):
-        """Setup Google Gemini API"""
+        """Setup Google Gemini API with model fallback"""
         # Try to get API key from environment
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key or api_key == "your_google_api_key_here":
@@ -66,16 +66,59 @@ class RAGService:
             self.model = None
             return
             
-        try:
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel("gemini-1.5-flash")
-            print("✅ Google Gemini API configured successfully!")
-        except Exception as e:
-            print(f"❌ Error configuring Google Gemini API: {str(e)}")
-            print("Please check your API key and try again.")
-            self.model = None
+        # Configure API key
+        genai.configure(api_key=api_key)
+        
+        # Try different models in order of preference
+        models_to_try = [
+            "gemini-2.0-flash-lite",  # User's preferred model
+            "gemini-1.5-flash",       # Most common fallback
+            "gemini-1.5-pro",         # Alternative
+            "gemini-pro"              # Legacy fallback
+        ]
+        
+        for model_name in models_to_try:
+            try:
+                print(f"🧪 Trying model: {model_name}")
+                test_model = genai.GenerativeModel(model_name)
+                
+                # Test with a simple generation to verify the model works
+                test_response = test_model.generate_content("Hello")
+                
+                # If we get here, the model works
+                self.model = test_model
+                print(f"✅ Google Gemini API configured successfully!")
+                print(f"   Model: {model_name}")
+                print(f"   Test response: {test_response.text[:50]}...")
+                return
+                
+            except Exception as e:
+                error_str = str(e).lower()
+                if "api_key_invalid" in error_str or "api key not valid" in error_str:
+                    print(f"❌ API key is invalid for {model_name}")
+                    print("📝 Please check your API key configuration:")
+                    print("   1. Verify the key is correct in your .env file")
+                    print("   2. Ensure billing is set up in Google Cloud Console")
+                    print("   3. Enable the Generative Language API")
+                    print("   4. Check API key restrictions")
+                    print("   5. See TROUBLESHOOT_API_KEY.md for detailed help")
+                    break  # Don't try other models if API key is invalid
+                elif "not found" in error_str or "does not exist" in error_str:
+                    print(f"⚠️  Model {model_name} not available, trying next...")
+                    continue
+                elif "permission" in error_str or "access" in error_str:
+                    print(f"❌ Access denied for {model_name}")
+                    continue
+                else:
+                    print(f"❌ Error with {model_name}: {str(e)[:100]}...")
+                    continue
+        
+        # If we get here, no model worked
+        print("❌ Failed to initialize any Gemini model!")
+        print("📖 Check TROUBLESHOOT_API_KEY.md for detailed troubleshooting steps")
+        self.model = None
     
-    def _generate_response(self, prompt: str, temperature: float = 0.2, max_tokens: int = 256) -> str:
+    def _generate_response(self, prompt: str, temperature: float = 0.3, max_tokens: int = 512) -> str:
         """Generate response using Google Gemini"""
         if not self.model:
             return "Sorry, the AI model is not properly configured. Please check the API key."
@@ -86,12 +129,21 @@ class RAGService:
                 generation_config=genai.types.GenerationConfig(
                     temperature=temperature,
                     max_output_tokens=max_tokens,
+                    candidate_count=1,
+                    stop_sequences=None
                 )
             )
             
             # Handle the response properly
             if response.text:
                 return response.text
+            elif response.candidates and len(response.candidates) > 0:
+                # Try to get text from first candidate if direct text access fails
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
+                    return ''.join([part.text for part in candidate.content.parts if hasattr(part, 'text')])
+                else:
+                    return "Sorry, I received an empty response from the AI model."
             else:
                 return "Sorry, I couldn't generate a response. The model may have been blocked or returned empty content."
                 
@@ -99,7 +151,17 @@ class RAGService:
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Error in _generate_response: {str(e)}", exc_info=True)
-            return f"Sorry, I encountered an error generating the response: {str(e)}"
+            
+            # Provide more specific error messages
+            error_str = str(e).lower()
+            if "api_key_invalid" in error_str or "api key not valid" in error_str:
+                return "Sorry, the API key is invalid. Please check your Google Gemini API key configuration."
+            elif "quota" in error_str or "rate limit" in error_str:
+                return "Sorry, API quota exceeded or rate limit reached. Please try again later."
+            elif "permission" in error_str or "access" in error_str:
+                return "Sorry, access denied. Please ensure your API key has permission to use Gemini models."
+            else:
+                return f"Sorry, I encountered an error generating the response: {str(e)}"
     
     def _get_video_transcript(self, video_id: str) -> str:
         """Fetch and process YouTube transcript"""
