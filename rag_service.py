@@ -138,8 +138,12 @@ class RAGService:
                 text = msg.text
             elif isinstance(msg, dict):
                 # Dictionary
-                sender = msg.get('sender', 'unknown')
-                text = msg.get('text', '')
+                try:
+                    sender = msg.get('sender', 'unknown')
+                    text = msg.get('text', '')
+                except Exception:   # ✅ use except instead of else
+                    sender = 'unknown'
+                    text = str(msg)
             else:
                 # Fallback for unexpected types
                 sender = 'unknown'
