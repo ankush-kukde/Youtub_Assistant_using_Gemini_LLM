@@ -2,6 +2,7 @@
 // 
 // This file contains the main configuration options for the extension.
 // Modify these values to customize the extension behavior.
+require('dotenv').config();
 
 const CONFIG = {
     // API Configuration
@@ -26,7 +27,7 @@ const CONFIG = {
         },
         
         // Google API Key for Gemini (leave blank, user will configure)
-        GOOGLE_API_KEY: ''
+        GOOGLE_API_KEY: process.env.GOOGLE_API_KEY
     },
 
     // Chat Configuration
