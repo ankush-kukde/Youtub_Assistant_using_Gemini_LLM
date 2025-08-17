@@ -10,6 +10,13 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 import google.generativeai as genai
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Access the API key
+
 class RAGService:
     def __init__(self):
         """Initialize the RAG service with models and configurations"""
