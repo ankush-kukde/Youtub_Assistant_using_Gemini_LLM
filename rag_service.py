@@ -110,7 +110,7 @@ class RAGService:
     #         raise Exception(f"Error fetching transcript for {video_id}: {str(e)}")
 
     def _get_video_transcript(self, video_id: str) -> str:
-    """Fetch and return YouTube transcript text for a given video ID."""
+        """Fetch and return YouTube transcript text for a given video ID."""
         try:
             # ✅ Use the instance-based API, not the static one
             ytt_api = YouTubeTranscriptApi()
