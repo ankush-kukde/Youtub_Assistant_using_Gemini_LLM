@@ -98,16 +98,33 @@ class RAGService:
     # -------------------------------------------------------------------------
     # TRANSCRIPT & VECTOR STORE
     # -------------------------------------------------------------------------
+    # def _get_video_transcript(self, video_id: str) -> str:
+    #     """Fetch YouTube transcript text"""
+    #     try:
+    #         transcript = YouTubeTranscriptApi.get_transcript(video_id)
+    #         text = " ".join(segment["text"] for segment in transcript)
+    #         return text
+    #     except TranscriptsDisabled:
+    #         raise Exception(f"Transcripts are disabled for video ID: {video_id}")
+    #     except Exception as e:
+    #         raise Exception(f"Error fetching transcript for {video_id}: {str(e)}")
+
     def _get_video_transcript(self, video_id: str) -> str:
-        """Fetch YouTube transcript text"""
+    """Fetch and return YouTube transcript text for a given video ID."""
         try:
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            text = " ".join(segment["text"] for segment in transcript)
-            return text
+            # ✅ Use the instance-based API, not the static one
+            ytt_api = YouTubeTranscriptApi()
+            fetched_transcript = ytt_api.fetch(video_id)
+
+            # ✅ Extract text safely from iterable transcript snippets
+            transcript_text = " ".join(snippet.text for snippet in fetched_transcript)
+            return transcript_text.strip()
+
         except TranscriptsDisabled:
-            raise Exception(f"Transcripts are disabled for video ID: {video_id}")
+            raise Exception(f"❌ Transcripts are disabled for video ID: {video_id}")
+
         except Exception as e:
-            raise Exception(f"Error fetching transcript for {video_id}: {str(e)}")
+            raise Exception(f"❌ Error fetching transcript for {video_id}: {str(e)}")
 
     def _create_vector_store(self, transcript_text: str) -> FAISS:
         """Create a FAISS vector store from transcript text"""
